@@ -17,7 +17,9 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: youtube-app
-        image: dhruvdarji123/youtube:latest
-        imagePullPolicy: "Always"
+        # PHẢI KHỚP VỚI TÊN TRONG JENKINSFILE
+        image: my-youtube-app:latest
+        # QUAN TRỌNG: Để K8s lấy image từ máy local thay vì lên mạng tìm
+        imagePullPolicy: "IfNotPresent" 
         ports:
         - containerPort: 3000
