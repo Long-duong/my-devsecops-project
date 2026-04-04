@@ -83,16 +83,16 @@ pipeline {
 
     post {
         success {
-            echo "--------------------------------------------------"
+            
             echo "--      PIPELINE THÀNH CÔNG RỰC RỠ              --"
             echo "-- Ứng dụng đã được triển khai lên Kubernetes   --"
-            echo "--------------------------------------------------"
+         
         }
         failure {
-            echo "--------------------------------------------------"
+           
             echo "--           PIPELINE THẤT BẠI                  --"
             echo "-- Vui lòng kiểm tra Console Log để sửa lỗi     --"
-            echo "--------------------------------------------------"
+         
         }
     }
 }
