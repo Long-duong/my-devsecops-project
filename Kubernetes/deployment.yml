@@ -2,10 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: youtube-app
-  labels:
-    app: youtube-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: youtube-app
@@ -14,12 +12,9 @@ spec:
       labels:
         app: youtube-app
     spec:
-      terminationGracePeriodSeconds: 30
       containers:
       - name: youtube-app
-        # PHẢI KHỚP VỚI TÊN TRONG JENKINSFILE
-        image: my-youtube-app:latest
-        # QUAN TRỌNG: Để K8s lấy image từ máy local thay vì lên mạng tìm
-        imagePullPolicy: "IfNotPresent" 
+        image: long12si/my-youtube-app:latest
+        imagePullPolicy: IfNotPresent # Vì bạn đã import vào k3d rồi
         ports:
         - containerPort: 3000

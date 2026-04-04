@@ -2,14 +2,16 @@ pipeline {
     agent any
 
     environment {
-        // Tên Image nội bộ khớp với khai báo trong đồ án
+        // Khai báo biến môi trường để dễ quản lý
         DOCKER_IMAGE = "my-youtube-app:latest"
+        DOCKER_HUB_USER = "long12si"
+        DOCKER_HUB_REPO = "long12si/my-youtube-app"
     }
 
     stages {
         stage('1. Checkout Code') {
             steps {
-                // Tải code từ GitHub của Long-duong
+                // Tải code mới nhất từ GitHub
                 checkout scm
             }
         }
@@ -17,7 +19,7 @@ pipeline {
         stage('2. SonarQube Analysis') {
             steps {
                 script {
-                    // Quét chất lượng mã nguồn (Đảm bảo container SonarQube đã bật)
+                    // Quét chất lượng và bảo mật mã nguồn
                     def scannerHome = tool 'SonarScanner'
                     withSonarQubeEnv('SonarServer') {
                         sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=youtube-app -Dsonar.sources=."
@@ -28,32 +30,36 @@ pipeline {
 
         stage('3. Build Docker Image') {
             steps {
-                // Đóng gói ứng dụng thành Docker Image
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                // Đóng gói ứng dụng (Sử dụng --network=host để tránh timeout mạng máy ảo)
+                sh "docker build --network=host -t ${DOCKER_IMAGE} ."
             }
         }
 
         stage('4. Trivy Security Scan') {
             steps {
-                // Quét lỗ hổng Image (Bản 0.49.1 ổn định, timeout 15p)
-                sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.49.1 image --timeout 15m --scanners vuln ${DOCKER_IMAGE}"
+                // Quét lỗ hổng trong Docker Image trước khi push
+                sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.49.1 image --timeout 15m --severity HIGH,CRITICAL ${DOCKER_IMAGE}"
             }
         }
 
-        stage('5. Kubernetes Deploy') {
+        stage('5. Push & K8s Deploy') {
             steps {
                 script {
-                    // Để Pipeline xanh 100% và tránh lỗi timeout mạng máy ảo:
-                    // Chúng ta in log quy trình triển khai chuẩn vào Jenkins
-                    echo "--- KIỂM TRA BẢO MẬT HOÀN TẤT - BẮT ĐẦU TRIỂN KHAI LÊN K8S ---"
-                    echo "Hệ thống đang đồng bộ cấu hình với Minikube cluster..."
-                    
-                    // Lệnh giả lập chạy thành công để lấy ô xanh chuyên nghiệp
-                    sh """
-                        echo 'kubectl apply -f Kubernetes/deployment.yml --validate=false'
-                        echo 'kubectl apply -f Kubernetes/service.yml --validate=false'
-                        echo 'Deployment successfully verified on Minikube!'
-                    """
+                    // Sử dụng ID 'docker-hub-creds' đã tạo trong Jenkins
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', passwordVariable: 'DOCKER_HUB_PASSWORD', usernameVariable: 'DOCKER_HUB_USERNAME')]) {
+                        
+                        // Đăng nhập và đẩy lên Docker Hub
+                        sh "echo ${DOCKER_HUB_PASSWORD} | docker login -u ${DOCKER_HUB_USERNAME} --password-stdin"
+                        sh "docker tag ${DOCKER_IMAGE} ${DOCKER_HUB_REPO}:latest"
+                        sh "docker push ${DOCKER_HUB_REPO}:latest"
+                        
+                        // Triển khai thực tế lên cụm k3d
+                        sh "kubectl apply -f Kubernetes/deployment.yml"
+                        sh "kubectl apply -f Kubernetes/service.yml"
+                        
+                        // Ép K8s cập nhật bản mới nhất ngay lập tức
+                        sh "kubectl rollout restart deployment/youtube-app"
+                    }
                 }
             }
         }
@@ -61,7 +67,12 @@ pipeline {
 
     post {
         success {
-            echo "Chúc mừng Long! Toàn bộ Pipeline DevSecOps đã XANH rực rỡ!"
+            echo "--- PIPELINE THÀNH CÔNG RỰC RỠ ---"
+            echo "Ứng dụng đã sẵn sàng tại http://localhost:8081"
+        }
+        failure {
+            echo "--- PIPELINE THẤT BẠI ---"
+            echo "Vui lòng kiểm tra lại logs của từng Stage."
         }
     }
 }

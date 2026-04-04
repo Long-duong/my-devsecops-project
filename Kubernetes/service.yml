@@ -1,13 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: youtube-app
-  labels:
-    app: youtube-app
+  name: youtube-service
 spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-    targetPort: 3000
   selector:
     app: youtube-app
+  ports:
+    - protocol: TCP
+      port: 80         # Port này khớp với lúc bạn tạo cluster k3d
+      targetPort: 3000 # Port mà React đang chạy bên trong Pod
+  type: LoadBalancer
