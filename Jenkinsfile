@@ -4,10 +4,11 @@ pipeline {
     environment {
         DOCKER_IMAGE = "my-youtube-app:latest"
         DOCKER_HUB_REPO = "long12si/my-youtube-app"
+        // Đường dẫn file config ĐÃ COPY VÀO TRONG CONTAINER
+        KUBE_CONFIG_PATH = "/var/lib/jenkins/.kube/config"
     }
 
     stages {
-
         stage('1. Checkout Code') {
             steps {
                 checkout scm
@@ -33,8 +34,8 @@ pipeline {
 
         stage('4. Trivy Security Scan') {
             steps {
-                // FAIL nếu có HIGH hoặc CRITICAL
-                sh '''
+                // Đổi thành nháy kép để nhận biến DOCKER_IMAGE
+                sh """
                 docker run --rm \
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 aquasec/trivy:0.49.1 image \
@@ -42,7 +43,7 @@ pipeline {
                 --severity HIGH,CRITICAL \
                 --exit-code 1 \
                 ${DOCKER_IMAGE}
-                '''
+                """
             }
         }
 
@@ -53,27 +54,23 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
+                    sh """
                     echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     docker tag ${DOCKER_IMAGE} ${DOCKER_HUB_REPO}:latest
                     docker push ${DOCKER_HUB_REPO}:latest
-                    '''
+                    """
                 }
             }
         }
 
         stage('6. Deploy to k3d (Kubernetes)') {
             steps {
-                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG
-
-                    kubectl apply -f Kubernetes/deployment.yml
-                    kubectl apply -f Kubernetes/service.yml
-
-                    kubectl rollout restart deployment/youtube-app
-                    '''
-                }
+                // Không cần withCredentials file nếu đã dùng docker cp config vào container
+                sh """
+                kubectl apply -f Kubernetes/deployment.yml --kubeconfig=${KUBE_CONFIG_PATH}
+                kubectl apply -f Kubernetes/service.yml --kubeconfig=${KUBE_CONFIG_PATH}
+                kubectl rollout restart deployment/youtube-app --kubeconfig=${KUBE_CONFIG_PATH}
+                """
             }
         }
     }
