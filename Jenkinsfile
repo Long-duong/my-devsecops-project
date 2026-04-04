@@ -67,11 +67,11 @@ pipeline {
 
     post {
         success {
-            echo "--- PIPELINE THÀNH CÔNG RỰC RỠ ---"
+            echo "-- PIPELINE THÀNH CÔNG RỰC RỠ --"
             echo "Ứng dụng đã sẵn sàng tại http://localhost:8081"
         }
         failure {
-            echo "--- PIPELINE THẤT BẠI ---"
+            echo "-PIPELINE THẤT BẠI- "
             echo "Vui lòng kiểm tra lại logs của từng Stage."
         }
     }
