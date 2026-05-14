@@ -74,11 +74,11 @@ pipeline {
 
     post {
         success {
-            echo "--      PIPELINE THÀNH CÔNG RỰC RỠ              --"
-            echo "-- Ứng dụng đã được triển khai lên Kubernetes   --"
+           
+            echo "-- like --"
         }
         failure {
-            echo "--           PIPELINE THẤT BẠI                  --"
+            echo "-         PIPELINE THẤT BẠI                  --"
             echo "-- Vui lòng kiểm tra Console Log để sửa lỗi     --"
         }
     }
