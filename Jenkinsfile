@@ -75,7 +75,7 @@ pipeline {
     post {
         success {
            
-            echo "-- like --"
+            echo "-- like dd--"
         }
         failure {
             echo "-         PIPELINE THẤT BẠI                  --"
