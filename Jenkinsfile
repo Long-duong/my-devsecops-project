@@ -62,14 +62,14 @@ pipeline {
         }
 
         stage('6. Deploy to k3d (Kubernetes)') {
-            steps {
-                sh """
-                kubectl apply -f Kubernetes/deployment.yml --kubeconfig=${KUBE_CONFIG_PATH} --insecure-skip-tls-verify=true
-                kubectl apply -f Kubernetes/service.yml --kubeconfig=${KUBE_CONFIG_PATH} --insecure-skip-tls-verify=true
-                kubectl rollout restart deployment/youtube-app --kubeconfig=${KUBE_CONFIG_PATH} --insecure-skip-tls-verify=true
-                """
-            }
-        }
+    steps {
+        sh """
+        kubectl apply -f Kubernetes/deployment.yml --kubeconfig=${KUBE_CONFIG_PATH} --insecure-skip-tls-verify=true --validate=false
+        kubectl apply -f Kubernetes/service.yml --kubeconfig=${KUBE_CONFIG_PATH} --insecure-skip-tls-verify=true --validate=false
+        """
+    }
+}
+
     }
 
     post {
