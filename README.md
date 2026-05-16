@@ -961,3 +961,4 @@ Go to `AWS CloudFormation`
 - Goto `monitoring-server` directory and run this terraform destroy command.
 
 `terraform destroy ` or `terraform destroy -auto-approve`
+fix trigger Sat May 16 05:20:27 AM EDT 2026
